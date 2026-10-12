@@ -368,12 +368,21 @@ fn test_push_removes_vc_from_source() {
 
     let issuer = Address::generate(&e);
     let vc_id = String::from_str(&e, "vc-1");
-    vault_a_client.issue(&vc_id, &String::from_str(&e, "<data>"), &vault_a, &issuer, &String::from_str(&e, "did:issuer"));
+    vault_a_client.issue(
+        &vc_id,
+        &String::from_str(&e, "<data>"),
+        &vault_a,
+        &issuer,
+        &String::from_str(&e, "did:issuer"),
+    );
 
     vault_a_client.push(&vc_id, &vault_b);
 
     assert!(vault_a_client.get_vc(&vc_id).is_none());
-    assert_eq!(vault_a_client.verify_vc(&vc_id), vc_vault::VCStatus::Invalid);
+    assert_eq!(
+        vault_a_client.verify_vc(&vc_id),
+        vc_vault::VCStatus::Invalid
+    );
 }
 
 /// `receive_push` requires the source and destination vaults to share the same
@@ -391,7 +400,13 @@ fn test_push_cross_owner_rejected() {
     let a = vc_vault::Client::new(&e, &vault_a);
     let issuer = Address::generate(&e);
     let vc_id = String::from_str(&e, "vc-1");
-    a.issue(&vc_id, &String::from_str(&e, "<d>"), &vault_a, &issuer, &String::from_str(&e, "did:i"));
+    a.issue(
+        &vc_id,
+        &String::from_str(&e, "<d>"),
+        &vault_a,
+        &issuer,
+        &String::from_str(&e, "did:i"),
+    );
     a.push(&vc_id, &vault_b); // owners differ -> PushOwnerMismatch
 }
 
@@ -470,7 +485,11 @@ fn test_issue_through_real_factory_charges_fee() {
     client.set_fee_enabled(&true);
 
     let owner = Address::generate(&e);
-    let vault_addr = client.deploy(&owner, &String::from_str(&e, "did:test"), &BytesN::random(&e));
+    let vault_addr = client.deploy(
+        &owner,
+        &String::from_str(&e, "did:test"),
+        &BytesN::random(&e),
+    );
     let vault = vc_vault::Client::new(&e, &vault_addr);
     let issuer = Address::generate(&e);
     StellarAssetClient::new(&e, &token_addr).mint(&issuer, &100_000_000);
@@ -509,8 +528,20 @@ fn test_same_issuer_custom_applies_across_vaults() {
     let v1c = vc_vault::Client::new(&e, &v1);
     let v2c = vc_vault::Client::new(&e, &v2);
 
-    v1c.issue(&String::from_str(&e, "a"), &String::from_str(&e, "<d>"), &v1, &issuer, &String::from_str(&e, "did:i"));
-    v2c.issue(&String::from_str(&e, "b"), &String::from_str(&e, "<d>"), &v2, &issuer, &String::from_str(&e, "did:i"));
+    v1c.issue(
+        &String::from_str(&e, "a"),
+        &String::from_str(&e, "<d>"),
+        &v1,
+        &issuer,
+        &String::from_str(&e, "did:i"),
+    );
+    v2c.issue(
+        &String::from_str(&e, "b"),
+        &String::from_str(&e, "<d>"),
+        &v2,
+        &issuer,
+        &String::from_str(&e, "did:i"),
+    );
 
     // 5.0 charged in each vault = 10.0 total to dest
     assert_eq!(TokenClient::new(&e, &token_addr).balance(&dest), 10_000_000);

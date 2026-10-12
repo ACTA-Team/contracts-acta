@@ -10,11 +10,16 @@ pub fn has_contract_admin(e: &Env) -> bool {
 }
 
 pub fn read_contract_admin(e: &Env) -> Address {
-    e.storage().instance().get(&VcVaultDataKey::ContractAdmin).unwrap()
+    e.storage()
+        .instance()
+        .get(&VcVaultDataKey::ContractAdmin)
+        .unwrap()
 }
 
 pub fn write_contract_admin(e: &Env, admin: &Address) {
-    e.storage().instance().set(&VcVaultDataKey::ContractAdmin, admin);
+    e.storage()
+        .instance()
+        .set(&VcVaultDataKey::ContractAdmin, admin);
 }
 
 pub fn has_pending_admin(e: &Env) -> bool {
@@ -26,7 +31,9 @@ pub fn read_pending_admin(e: &Env) -> Option<Address> {
 }
 
 pub fn write_pending_admin(e: &Env, admin: &Address) {
-    e.storage().instance().set(&VcVaultDataKey::PendingAdmin, admin);
+    e.storage()
+        .instance()
+        .set(&VcVaultDataKey::PendingAdmin, admin);
 }
 
 pub fn remove_pending_admin(e: &Env) {

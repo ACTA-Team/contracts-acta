@@ -7,13 +7,13 @@
 #![allow(dead_code)]
 
 pub mod constants;
-mod interface;
 pub mod contract;
-mod validator;
 mod error;
 mod events;
-pub mod types;
+mod interface;
 mod storage;
+pub mod types;
+mod validator;
 mod vault;
 
 #[cfg(test)]
