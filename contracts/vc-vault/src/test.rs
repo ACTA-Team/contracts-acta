@@ -30,17 +30,48 @@ pub struct MockFactory;
 
 #[contractimpl]
 impl MockFactory {
-    pub fn set_quote(e: Env, enabled: bool, amount: i128, token: Option<Address>, dest: Option<Address>) {
-        e.storage().instance().set(&Symbol::new(&e, "q"), &FeeQuote { enabled, amount, token, dest });
+    pub fn set_quote(
+        e: Env,
+        enabled: bool,
+        amount: i128,
+        token: Option<Address>,
+        dest: Option<Address>,
+    ) {
+        e.storage().instance().set(
+            &Symbol::new(&e, "q"),
+            &FeeQuote {
+                enabled,
+                amount,
+                token,
+                dest,
+            },
+        );
     }
     pub fn quote_fee(e: Env, _issuer: Address) -> FeeQuote {
-        e.storage().instance().get(&Symbol::new(&e, "q"))
-            .unwrap_or(FeeQuote { enabled: false, amount: 0, token: None, dest: None })
+        e.storage()
+            .instance()
+            .get(&Symbol::new(&e, "q"))
+            .unwrap_or(FeeQuote {
+                enabled: false,
+                amount: 0,
+                token: None,
+                dest: None,
+            })
     }
-    pub fn is_vault(_e: Env, _addr: Address) -> bool { true }
+    pub fn is_vault(_e: Env, _addr: Address) -> bool {
+        true
+    }
 }
 
-fn setup() -> (Env, Address, Address, Address, Address, Address, VcVaultContractClient<'static>) {
+fn setup() -> (
+    Env,
+    Address,
+    Address,
+    Address,
+    Address,
+    Address,
+    VcVaultContractClient<'static>,
+) {
     let env = Env::default();
     env.mock_all_auths_allowing_non_root_auth();
     let owner = Address::generate(&env);
@@ -48,7 +79,10 @@ fn setup() -> (Env, Address, Address, Address, Address, Address, VcVaultContract
     let issuer = Address::generate(&env);
     let factory = env.register(MockFactory, ());
     let did_uri = String::from_str(&env, "did:pkh:stellar:testnet:OWNER");
-    let contract_id = env.register(VcVaultContract, (owner.clone(), admin.clone(), did_uri, factory.clone()));
+    let contract_id = env.register(
+        VcVaultContract,
+        (owner.clone(), admin.clone(), did_uri, factory.clone()),
+    );
     let client = VcVaultContractClient::new(&env, &contract_id);
     // Issuance is open: no pre-authorization needed.
     (env, owner, admin, issuer, factory, contract_id, client)
@@ -207,7 +241,12 @@ fn test_issue_charges_fee_to_dest() {
     let dest = Address::generate(&env);
 
     let mf = MockFactoryClient::new(&env, &factory);
-    mf.set_quote(&true, &10_000_000_i128, &Some(token_addr.clone()), &Some(dest.clone()));
+    mf.set_quote(
+        &true,
+        &10_000_000_i128,
+        &Some(token_addr.clone()),
+        &Some(dest.clone()),
+    );
 
     client.issue(
         &String::from_str(&env, "vc-1"),
@@ -216,7 +255,10 @@ fn test_issue_charges_fee_to_dest() {
         &issuer,
         &String::from_str(&env, "did:issuer"),
     );
-    assert_eq!(TokenClient::new(&env, &token_addr).balance(&dest), 10_000_000);
+    assert_eq!(
+        TokenClient::new(&env, &token_addr).balance(&dest),
+        10_000_000
+    );
 }
 
 #[test]
@@ -230,7 +272,10 @@ fn test_issue_no_fee_when_disabled() {
         &issuer,
         &String::from_str(&env, "did:issuer"),
     );
-    assert_eq!(client.verify_vc(&String::from_str(&env, "vc-1")), VCStatus::Valid);
+    assert_eq!(
+        client.verify_vc(&String::from_str(&env, "vc-1")),
+        VCStatus::Valid
+    );
 }
 
 #[test]
@@ -244,7 +289,10 @@ fn test_any_issuer_can_issue_open() {
         &stranger,
         &String::from_str(&env, "did:issuer"),
     );
-    assert_eq!(client.verify_vc(&String::from_str(&env, "vc-open")), VCStatus::Valid);
+    assert_eq!(
+        client.verify_vc(&String::from_str(&env, "vc-open")),
+        VCStatus::Valid
+    );
 }
 
 #[test]
@@ -277,7 +325,10 @@ fn test_allow_issuer_reenables_issue() {
         &iss,
         &String::from_str(&env, "did:issuer"),
     );
-    assert_eq!(client.verify_vc(&String::from_str(&env, "vc-ok")), VCStatus::Valid);
+    assert_eq!(
+        client.verify_vc(&String::from_str(&env, "vc-ok")),
+        VCStatus::Valid
+    );
 }
 
 #[test]
@@ -288,17 +339,29 @@ fn test_batch_issue_charges_fee_times_n() {
     let token_addr = sac.address();
     StellarAssetClient::new(&env, &token_addr).mint(&issuer, &100_000_000);
     let dest = Address::generate(&env);
-    MockFactoryClient::new(&env, &factory)
-        .set_quote(&true, &10_000_000_i128, &Some(token_addr.clone()), &Some(dest.clone()));
+    MockFactoryClient::new(&env, &factory).set_quote(
+        &true,
+        &10_000_000_i128,
+        &Some(token_addr.clone()),
+        &Some(dest.clone()),
+    );
 
     let vcs = vec![
         &env,
         (String::from_str(&env, "a"), String::from_str(&env, "<d>")),
         (String::from_str(&env, "b"), String::from_str(&env, "<d>")),
     ];
-    client.batch_issue(&issuer, &contract_id, &String::from_str(&env, "did:issuer"), &vcs);
+    client.batch_issue(
+        &issuer,
+        &contract_id,
+        &String::from_str(&env, "did:issuer"),
+        &vcs,
+    );
     // 2 VCs * 10.0 = 20.0
-    assert_eq!(TokenClient::new(&env, &token_addr).balance(&dest), 20_000_000);
+    assert_eq!(
+        TokenClient::new(&env, &token_addr).balance(&dest),
+        20_000_000
+    );
 }
 
 // --- Targeted auth tests ---
@@ -307,14 +370,25 @@ fn test_batch_issue_charges_fee_times_n() {
 // guards are actually enforced and would catch regressions where a guard is
 // accidentally removed.
 
-fn setup_no_mock() -> (Env, Address, Address, Address, Address, Address, VcVaultContractClient<'static>) {
+fn setup_no_mock() -> (
+    Env,
+    Address,
+    Address,
+    Address,
+    Address,
+    Address,
+    VcVaultContractClient<'static>,
+) {
     let env = Env::default();
     let owner = Address::generate(&env);
     let admin = Address::generate(&env);
     let issuer = Address::generate(&env);
     let factory = env.register(MockFactory, ());
     let did_uri = String::from_str(&env, "did:test");
-    let contract_id = env.register(VcVaultContract, (owner.clone(), admin.clone(), did_uri, factory.clone()));
+    let contract_id = env.register(
+        VcVaultContract,
+        (owner.clone(), admin.clone(), did_uri, factory.clone()),
+    );
     let client = VcVaultContractClient::new(&env, &contract_id);
     (env, owner, admin, issuer, factory, contract_id, client)
 }
@@ -632,7 +706,7 @@ fn test_batch_issue_with_duplicate_within_batch_panics() {
     let (env, _owner, _admin, issuer, _factory, contract_id, client) = setup();
     let data = String::from_str(&env, "<data>");
     let dup = String::from_str(&env, "vc-x");
-    let vcs = vec![&env, (dup.clone(), data.clone()), (dup, data),];
+    let vcs = vec![&env, (dup.clone(), data.clone()), (dup, data)];
     client.batch_issue(
         &issuer,
         &contract_id,
@@ -672,7 +746,7 @@ fn test_batch_issue_on_revoked_vault_panics() {
     let (env, _owner, _admin, issuer, _factory, contract_id, client) = setup();
     client.revoke_vault();
     let data = String::from_str(&env, "<data>");
-    let vcs = vec![&env, (String::from_str(&env, "vc-1"), data),];
+    let vcs = vec![&env, (String::from_str(&env, "vc-1"), data)];
     client.batch_issue(
         &issuer,
         &contract_id,
@@ -687,7 +761,7 @@ fn test_batch_issue_with_wrong_vault_contract_panics() {
     let (env, _owner, _admin, issuer, _factory, _contract_id, client) = setup();
     let wrong_contract = Address::generate(&env);
     let data = String::from_str(&env, "<data>");
-    let vcs = vec![&env, (String::from_str(&env, "vc-1"), data),];
+    let vcs = vec![&env, (String::from_str(&env, "vc-1"), data)];
     client.batch_issue(
         &issuer,
         &wrong_contract,
@@ -733,7 +807,10 @@ fn test_constructor_accepts_did_uri_at_max_len() {
     let owner = Address::generate(&env);
     let admin = Address::generate(&env);
     let did_uri = long_string(&env, b'd', 256); // MAX_DID_URI_LEN
-    env.register(VcVaultContract, (owner, admin, did_uri, Address::generate(&env)));
+    env.register(
+        VcVaultContract,
+        (owner, admin, did_uri, Address::generate(&env)),
+    );
     // No panic means success.
 }
 
@@ -744,7 +821,10 @@ fn test_constructor_rejects_did_uri_over_max_len() {
     let owner = Address::generate(&env);
     let admin = Address::generate(&env);
     let did_uri = long_string(&env, b'd', 257);
-    env.register(VcVaultContract, (owner, admin, did_uri, Address::generate(&env)));
+    env.register(
+        VcVaultContract,
+        (owner, admin, did_uri, Address::generate(&env)),
+    );
 }
 
 #[test]
@@ -857,24 +937,37 @@ fn test_get_vc_rejects_oversized_vc_id() {
 
 #[test]
 fn test_constructor_emits_contract_initialized_and_vault_created() {
-    use soroban_sdk::{Event as SorobanEvent, Map, Symbol, TryFromVal, Val};
     use crate::events::{ContractInitialized, VaultCreated};
+    use soroban_sdk::{Event as SorobanEvent, Map, Symbol, TryFromVal, Val};
     let env = Env::default();
     let owner = Address::generate(&env);
     let admin = Address::generate(&env);
     let did_uri = String::from_str(&env, "did:test");
-    env.register(VcVaultContract, (owner.clone(), admin.clone(), did_uri.clone(), Address::generate(&env)));
+    env.register(
+        VcVaultContract,
+        (
+            owner.clone(),
+            admin.clone(),
+            did_uri.clone(),
+            Address::generate(&env),
+        ),
+    );
     let events = env.events().all();
     assert_eq!(events.len(), 2);
     let (_, topics0, data0) = events.get(0).unwrap();
-    let expected0 = ContractInitialized { admin: admin.clone() };
+    let expected0 = ContractInitialized {
+        admin: admin.clone(),
+    };
     assert_eq!(topics0, expected0.topics(&env));
     assert_eq!(
         Map::<Symbol, Val>::try_from_val(&env, &data0).unwrap(),
         Map::<Symbol, Val>::try_from_val(&env, &expected0.data(&env)).unwrap(),
     );
     let (_, topics1, data1) = events.get(1).unwrap();
-    let expected1 = VaultCreated { owner: owner.clone(), did_uri: did_uri.clone() };
+    let expected1 = VaultCreated {
+        owner: owner.clone(),
+        did_uri: did_uri.clone(),
+    };
     assert_eq!(topics1, expected1.topics(&env));
     assert_eq!(
         Map::<Symbol, Val>::try_from_val(&env, &data1).unwrap(),
@@ -884,15 +977,18 @@ fn test_constructor_emits_contract_initialized_and_vault_created() {
 
 #[test]
 fn test_nominate_admin_emits_admin_nominated() {
-    use soroban_sdk::{Event as SorobanEvent, Map, Symbol, TryFromVal, Val};
     use crate::events::AdminNominated;
+    use soroban_sdk::{Event as SorobanEvent, Map, Symbol, TryFromVal, Val};
     let (env, _owner, admin, _issuer, _factory, _contract_id, client) = setup();
     let nominee = Address::generate(&env);
     client.nominate_admin(&nominee);
     let events = env.events().all();
     assert_eq!(events.len(), 1);
     let (_, topics, data) = events.get(0).unwrap();
-    let expected = AdminNominated { current_admin: admin.clone(), nominee: nominee.clone() };
+    let expected = AdminNominated {
+        current_admin: admin.clone(),
+        nominee: nominee.clone(),
+    };
     assert_eq!(topics, expected.topics(&env));
     assert_eq!(
         Map::<Symbol, Val>::try_from_val(&env, &data).unwrap(),
@@ -902,8 +998,8 @@ fn test_nominate_admin_emits_admin_nominated() {
 
 #[test]
 fn test_accept_contract_admin_emits_admin_transferred() {
-    use soroban_sdk::{Event as SorobanEvent, Map, Symbol, TryFromVal, Val};
     use crate::events::AdminTransferred;
+    use soroban_sdk::{Event as SorobanEvent, Map, Symbol, TryFromVal, Val};
     let (env, _owner, admin, _issuer, _factory, _contract_id, client) = setup();
     let nominee = Address::generate(&env);
     client.nominate_admin(&nominee);
@@ -913,7 +1009,10 @@ fn test_accept_contract_admin_emits_admin_transferred() {
     let events = env.events().all();
     assert_eq!(events.len(), 1);
     let (_, topics, data) = events.get(0).unwrap();
-    let expected = AdminTransferred { old_admin: admin.clone(), new_admin: nominee.clone() };
+    let expected = AdminTransferred {
+        old_admin: admin.clone(),
+        new_admin: nominee.clone(),
+    };
     assert_eq!(topics, expected.topics(&env));
     assert_eq!(
         Map::<Symbol, Val>::try_from_val(&env, &data).unwrap(),

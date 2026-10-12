@@ -1,15 +1,15 @@
 //! Contract implementation: public entrypoints.
 
-use crate::interface::VcVaultTrait;
 use crate::error::ContractError;
 use crate::events;
-use crate::types::VCStatus;
+use crate::interface::VcVaultTrait;
 use crate::storage;
+use crate::types::VCStatus;
 use crate::validator::*;
 use crate::vault;
 use soroban_sdk::{
-    contract, contractimpl, contractmeta, panic_with_error, symbol_short, Address, Env,
-    IntoVal, String, Vec,
+    contract, contractimpl, contractmeta, panic_with_error, symbol_short, Address, Env, IntoVal,
+    String, Vec,
 };
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -25,7 +25,13 @@ pub struct VcVaultContract;
 
 #[contractimpl]
 impl VcVaultContract {
-    pub fn __constructor(e: Env, vault_owner: Address, contract_admin: Address, did_uri: String, factory_address: Address) {
+    pub fn __constructor(
+        e: Env,
+        vault_owner: Address,
+        contract_admin: Address,
+        did_uri: String,
+        factory_address: Address,
+    ) {
         require_did_uri_len(&e, &did_uri);
         storage::write_vault_owner(&e, &vault_owner);
         storage::write_factory_address(&e, &factory_address);
@@ -254,7 +260,9 @@ impl VcVaultTrait for VcVaultContract {
         let factory = storage::read_factory_address(&e);
         let unit = vault::charge_fee_quote_only(&e, &factory, &issuer_addr);
         if unit.0 && unit.1 > 0 {
-            let total = unit.1.checked_mul(n as i128)
+            let total = unit
+                .1
+                .checked_mul(n as i128)
                 .unwrap_or_else(|| panic_with_error!(e, ContractError::FeeOutOfBounds));
             vault::transfer_fee(&e, &unit.2, &unit.3, &issuer_addr, total);
         }
@@ -320,7 +328,8 @@ impl VcVaultTrait for VcVaultContract {
                 vc_id.clone(),
                 vc.data,
                 vc.issuer_did,
-            ).into_val(&e),
+            )
+                .into_val(&e),
         );
         storage::remove_vc_from_index(&e, &vc_id);
         storage::remove_vault_vc(&e, &vc_id);

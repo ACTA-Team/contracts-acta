@@ -1,17 +1,11 @@
 //! Credential lifecycle: store, issue with fee, revoke.
 
 use crate::error::ContractError;
-use crate::types::{FeeQuote, VCStatus, VerifiableCredential};
 use crate::storage;
+use crate::types::{FeeQuote, VCStatus, VerifiableCredential};
 use soroban_sdk::{panic_with_error, symbol_short, Address, Env, IntoVal, String};
 
-pub fn store_vc(
-    e: &Env,
-    id: String,
-    data: String,
-    issuance_contract: Address,
-    issuer_did: String,
-) {
+pub fn store_vc(e: &Env, id: String, data: String, issuance_contract: Address, issuer_did: String) {
     let new_vc = VerifiableCredential {
         id: id.clone(),
         data,
@@ -44,9 +38,11 @@ pub fn charge_fee(e: &Env, factory: &Address, issuer: &Address) -> i128 {
 
 /// Returns (enabled, amount, token, dest) without transferring. token/dest are
 /// only meaningful when enabled. Used by batch_issue to charge a single total.
-pub fn charge_fee_quote_only(e: &Env, factory: &Address, issuer: &Address)
-    -> (bool, i128, Address, Address)
-{
+pub fn charge_fee_quote_only(
+    e: &Env,
+    factory: &Address,
+    issuer: &Address,
+) -> (bool, i128, Address, Address) {
     let q: FeeQuote = e.invoke_contract(
         factory,
         &symbol_short!("quote_fee"),

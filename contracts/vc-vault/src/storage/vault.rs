@@ -60,9 +60,7 @@ pub fn write_vault_admin(e: &Env, admin: &Address) {
 // --- DID URI ---
 
 pub fn write_vault_did(e: &Env, did: &String) {
-    e.storage()
-        .persistent()
-        .set(&VcVaultDataKey::VaultDid, did);
+    e.storage().persistent().set(&VcVaultDataKey::VaultDid, did);
 }
 
 pub fn read_vault_did(e: &Env) -> Option<String> {

@@ -20,11 +20,17 @@ jobs:
       - name: Install wasm32v1-none target
         run: rustup target add wasm32v1-none
 
+      - name: Format check
+        run: cargo fmt --check
+
       - name: Build vc-vault WASM (required by vc-vault-factory tests)
         run: cargo rustc -p vc-vault-contract --target wasm32v1-none --release -- --crate-type cdylib
 
       - name: Build did-stellar-registry WASM
         run: cargo build -p did-stellar-registry --target wasm32v1-none --release
+
+      - name: Clippy check
+        run: cargo clippy --workspace --all-targets -- -D warnings
 
       - name: Build (native)
         run: cargo build --verbose

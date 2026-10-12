@@ -3,8 +3,8 @@ use soroban_sdk::{
     String,
 };
 
-use crate::{events, storage};
 pub use crate::storage::VaultInitMeta;
+use crate::{events, storage};
 
 #[contract]
 pub struct VaultFactoryContract;
@@ -19,7 +19,13 @@ pub trait VaultFactory {
 
     /// Deploy a vault on behalf of `owner`. `deployer` signs and pays; the vault
     /// belongs to `owner` from creation. Anyone can be a deployer - no whitelist.
-    fn deploy_sponsored(e: Env, deployer: Address, owner: Address, did_uri: String, user_salt: BytesN<32>) -> Address;
+    fn deploy_sponsored(
+        e: Env,
+        deployer: Address,
+        owner: Address,
+        did_uri: String,
+        user_salt: BytesN<32>,
+    ) -> Address;
 
     /// Return true if `vault_address` was deployed by this factory.
     fn is_vault(e: Env, vault_address: Address) -> bool;
@@ -126,7 +132,12 @@ impl VaultFactoryContract {
     pub fn quote_fee(e: Env, issuer: Address) -> storage::FeeQuote {
         storage::extend_instance(&e);
         if !storage::read_fee_enabled(&e) {
-            return storage::FeeQuote { enabled: false, amount: 0, token: None, dest: None };
+            return storage::FeeQuote {
+                enabled: false,
+                amount: 0,
+                token: None,
+                dest: None,
+            };
         }
         let standard = storage::try_read_fee_standard(&e).unwrap_or(0);
         let amount = match storage::read_fee_custom(&e, &issuer) {
@@ -135,7 +146,11 @@ impl VaultFactoryContract {
                     Some(exp) => e.ledger().timestamp() <= exp,
                     None => true,
                 };
-                if valid { c.amount } else { standard }
+                if valid {
+                    c.amount
+                } else {
+                    standard
+                }
             }
             None => standard,
         };
@@ -180,10 +195,10 @@ fn deploy_vault(e: &Env, owner: &Address, did_uri: String, user_salt: BytesN<32>
     let meta = storage::get_vault_init_meta(e);
     let new_salt = derive_salt(e, user_salt, owner);
     let factory_address = e.current_contract_address();
-    let vault_address = e
-        .deployer()
-        .with_current_contract(new_salt)
-        .deploy_v2(meta.vault_hash, (owner.clone(), meta.contract_admin, did_uri, factory_address));
+    let vault_address = e.deployer().with_current_contract(new_salt).deploy_v2(
+        meta.vault_hash,
+        (owner.clone(), meta.contract_admin, did_uri, factory_address),
+    );
     storage::set_deployed(e, &vault_address);
     vault_address
 }
@@ -198,7 +213,13 @@ impl VaultFactory for VaultFactoryContract {
         vault_address
     }
 
-    fn deploy_sponsored(e: Env, deployer: Address, owner: Address, did_uri: String, user_salt: BytesN<32>) -> Address {
+    fn deploy_sponsored(
+        e: Env,
+        deployer: Address,
+        owner: Address,
+        did_uri: String,
+        user_salt: BytesN<32>,
+    ) -> Address {
         deployer.require_auth();
         storage::extend_instance(&e);
         let vault_address = deploy_vault(&e, &owner, did_uri, user_salt);
