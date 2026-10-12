@@ -1,8 +1,8 @@
 //! Denied issuer index storage. O(1) operations via swap-and-pop.
 
+use super::VcVaultDataKey;
 use crate::constants::{MAX_DENIED_ISSUERS, PERSISTENT_TTL_EXTEND_TO, PERSISTENT_TTL_THRESHOLD};
 use crate::error::ContractError;
-use super::VcVaultDataKey;
 use soroban_sdk::{panic_with_error, Address, Env};
 
 // --- Denied issuer index ---

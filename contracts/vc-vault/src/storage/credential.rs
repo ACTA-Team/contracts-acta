@@ -1,23 +1,29 @@
 //! VC payload, O(1) index, and status storage.
 
+use super::VcVaultDataKey;
 use crate::constants::{PERSISTENT_TTL_EXTEND_TO, PERSISTENT_TTL_THRESHOLD};
 use crate::error::ContractError;
 use crate::types::{VCStatus, VerifiableCredential};
-use super::VcVaultDataKey;
 use soroban_sdk::{panic_with_error, Env, String};
 
 // --- VC payloads ---
 
 pub fn write_vault_vc(e: &Env, vc_id: &String, vc: &VerifiableCredential) {
-    e.storage().persistent().set(&VcVaultDataKey::VaultVC(vc_id.clone()), vc)
+    e.storage()
+        .persistent()
+        .set(&VcVaultDataKey::VaultVC(vc_id.clone()), vc)
 }
 
 pub fn read_vault_vc(e: &Env, vc_id: &String) -> Option<VerifiableCredential> {
-    e.storage().persistent().get(&VcVaultDataKey::VaultVC(vc_id.clone()))
+    e.storage()
+        .persistent()
+        .get(&VcVaultDataKey::VaultVC(vc_id.clone()))
 }
 
 pub fn remove_vault_vc(e: &Env, vc_id: &String) {
-    e.storage().persistent().remove(&VcVaultDataKey::VaultVC(vc_id.clone()));
+    e.storage()
+        .persistent()
+        .remove(&VcVaultDataKey::VaultVC(vc_id.clone()));
 }
 
 // --- O(1) VC index ---
