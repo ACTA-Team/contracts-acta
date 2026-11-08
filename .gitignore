@@ -8,7 +8,6 @@ docs/refactor/
 .agents/
 skills-lock.json
 docs/did-spec/did-stellar-v0.1 copy.md
-docs/architecture/
 .env
 .env.*
 .claude/
